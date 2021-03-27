@@ -22,24 +22,53 @@ interface CartContextData {
 const CartContext = createContext<CartContextData>({} as CartContextData);
 
 export function CartProvider({ children }: CartProviderProps): JSX.Element {
-  const [cart, setCart] = useState<Product[]>(() => {
-    // const storagedCart = Buscar dados do localStorage
+ 
+  const [productsData, setProductsData] = useState<Product[]>([]);
+  const [stocks, setStocks] = useState<Stock[]>([]);
 
-    // if (storagedCart) {
-    //   return JSON.parse(storagedCart);
-    // }
+  const [cart, setCart] = useState<Product[]>(() => {
+    const storagedCart = localStorage.getItem('@RocketShoes:cart');
+
+    if (storagedCart) {
+      return JSON.parse(storagedCart);
+    }
 
     return [];
   });
 
+  
+
   const addProduct = async (productId: number) => {
     try {
-      // TODO
+
+      const thereIsProduct = cart.find(({ id }) => id === productId);
+
+      if (thereIsProduct) {
+        const { data } = await api.get<Stock>(`stock/${productId}`);
+        if(thereIsProduct.amount >= data.amount)
+        {
+          cart.map(x => x.id === productId ? x.amount + 1 : x);                    
+        }
+        else
+        {
+          toast.error('Quantidade solicitada fora de estoque');  
+          return;        
+        }
+      }
+      else{
+        const product = await api.get<Product>(`products/${productId}`);
+        cart.push(product.data);
+      }
+
+      localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
     } catch {
       // TODO
     }
   };
 
+  
+
+ 
   const removeProduct = (productId: number) => {
     try {
       // TODO
@@ -61,7 +90,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   return (
     <CartContext.Provider
-      value={{ cart, addProduct, removeProduct, updateProductAmount }}
+      value={{ cart, addProduct, removeProduct, updateProductAmount}}
     >
       {children}
     </CartContext.Provider>
