@@ -22,7 +22,7 @@ interface CartContextData {
 const CartContext = createContext<CartContextData>({} as CartContextData);
 
 export function CartProvider({ children }: CartProviderProps): JSX.Element {
- 
+
   const [productsData, setProductsData] = useState<Product[]>([]);
   const [stocks, setStocks] = useState<Stock[]>([]);
 
@@ -36,7 +36,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     return [];
   });
 
-  
+
 
   const addProduct = async (productId: number) => {
     try {
@@ -45,19 +45,24 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
       if (thereIsProduct) {
         const { data } = await api.get<Stock>(`stock/${productId}`);
-        if(thereIsProduct.amount >= data.amount)
-        {
-          cart.map(x => x.id === productId ? x.amount + 1 : x);                    
+        if (thereIsProduct.amount <= data.amount) {
+          cart.map((x) => {
+            if (x.id == productId) {
+              x.amount += 1;
+            }
+            return x;
+          });
         }
-        else
-        {
-          toast.error('Quantidade solicitada fora de estoque');  
-          return;        
+        else {
+          toast.error('Quantidade solicitada fora de estoque');
+          return;
         }
       }
-      else{
-        const product = await api.get<Product>(`products/${productId}`);
-        cart.push(product.data);
+      else {
+        const product = (await api.get<Product>(`products/${productId}`)).data;
+        product.amount = 1;
+        setCart([...cart, product]);
+        // cart.push(product);
       }
 
       localStorage.setItem('@RocketShoes:cart', JSON.stringify(cart));
@@ -66,9 +71,9 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     }
   };
 
-  
 
- 
+
+
   const removeProduct = (productId: number) => {
     try {
       // TODO
@@ -90,7 +95,7 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   return (
     <CartContext.Provider
-      value={{ cart, addProduct, removeProduct, updateProductAmount}}
+      value={{ cart, addProduct, removeProduct, updateProductAmount }}
     >
       {children}
     </CartContext.Provider>
