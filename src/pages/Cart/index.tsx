@@ -7,7 +7,7 @@ import {
 import { useCart } from '../../hooks/useCart';
 
 // import { useCart } from '../../hooks/useCart';
-// import { formatPrice } from '../../util/format';
+import { formatPrice } from '../../util/format';
 import { Container, ProductTable, Total } from './styles';
 
 interface Product {
@@ -18,18 +18,29 @@ interface Product {
   amount: number;
 }
 
+interface ProductFormatted extends Product
+{
+  priceFormatted : string;
+  subTotal : string;
+}
+
 const Cart = (): JSX.Element => {
   const { cart, removeProduct, updateProductAmount } = useCart();
 
   const cartFormatted = cart.map(product => ({
-      
-  }))
-  // const total =
-  //   formatPrice(
-  //     cart.reduce((sumTotal, product) => {
-  //       // TODO
-  //     }, 0)
-  //   )
+    ...product,
+    priceFormatted :  formatPrice(product.price),
+    subTotal : formatPrice(product.price*product.amount)      
+  } as ProductFormatted))
+
+
+  const total =
+    formatPrice(
+      cart.reduce((sumTotal, product) => {
+        sumTotal += product.amount*product.price;        
+        return sumTotal;        
+      }, 0)
+    )
 
   function handleProductIncrement(product: Product) {
     var updateProduct = {
@@ -65,7 +76,7 @@ const Cart = (): JSX.Element => {
         </thead>
        
         <tbody>       
-        {cart.map(product => (
+        {cartFormatted.map(product => (
           
           <tr data-testid="product">
             <td>
@@ -73,7 +84,7 @@ const Cart = (): JSX.Element => {
             </td>
             <td>
               <strong>{product.title}</strong>
-              <span>{product.price}</span>
+              <span>{product.priceFormatted}</span>
             </td>
             <td>
               <div>
@@ -101,13 +112,13 @@ const Cart = (): JSX.Element => {
               </div>
             </td>
             <td>
-              <strong>R$ 359,80</strong>
+              <strong>{product.subTotal}</strong>
             </td>
             <td>
               <button
                 type="button"
                 data-testid="remove-product"
-              onClick={() => handleRemoveProduct(product.id)}
+                 onClick={() => handleRemoveProduct(product.id)}
               >
                 <MdDelete size={20} />
               </button>
@@ -123,7 +134,7 @@ const Cart = (): JSX.Element => {
 
         <Total>
           <span>TOTAL</span>
-          <strong>R$ 359,80</strong>
+          <strong>{total}</strong>
         </Total>
       </footer>
     </Container>
